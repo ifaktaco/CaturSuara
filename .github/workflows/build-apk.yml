@@ -23,6 +23,12 @@ jobs:
           NDK="$(find "$ANDROID_HOME/ndk" -mindepth 1 -maxdepth 1 -type d | sort -V | tail -n 1)"
           test -n "$NDK"
           TOOL="$NDK/toolchains/llvm/prebuilt/linux-x86_64/bin"
+          # Android Bionic provides pthread symbols without a separate libpthread.
+          sed -i 's/-lpthread//g' /tmp/stockfish/src/Makefile
+          if grep -n -- '-lpthread' /tmp/stockfish/src/Makefile; then
+            echo "ERROR: -lpthread remains in Stockfish Makefile" >&2
+            exit 1
+          fi
           mkdir -p app/src/main/jniLibs/arm64-v8a
           make -C /tmp/stockfish/src -j2 build ARCH=armv8 COMP=clang \
             CXX="$TOOL/aarch64-linux-android26-clang++" \
