@@ -1,12 +1,17 @@
-# CATUR SUARA — Proyek Android (versi awal)
+# CATUR SUARA V2
 
-Aplikasi Android Kotlin untuk permainan catur dua pemain, papan interaktif, input koordinat melalui suara bahasa Indonesia, dan Text-to-Speech. Validasi langkah memakai chesslib.
+**Satu versi saja: V2 (versionName 2.0, versionCode 2).**
 
-## Build
-Buka folder ini di Android Studio, sinkronkan Gradle, lalu **Build > Build APK(s)**. APK debug biasanya berada di `app/build/outputs/apk/debug/app-debug.apk`.
+Papan catur 8x8 terlihat; pemain putih melawan Stockfish offline (arm64-v8a) melalui UCI. Mesin Stockfish 17.1 dikompilasi dari sumber resmi saat GitHub Actions build dan dibundel di APK sebagai executable `libstockfish.so` di nativeLibraryDir. Tidak perlu internet untuk mesin catur setelah APK terpasang.
 
-## Batasan penting
-- **Belum ada mesin Stockfish** dan belum ada lawan komputer. Ini fondasi dua pemain, bukan APK final sesuai seluruh spesifikasi.
-- Pengenalan suara memakai layanan Android; **tidak dijamin offline**. Untuk offline penuh perlu mengintegrasikan model ASR lokal.
-- Promosi pion saat ini otomatis memilih ratu.
-- Proyek ini belum diuji build karena lingkungan penyusunan tidak menyediakan Android SDK/Gradle.
+Perintah suara memakai layanan pengenal suara Android dengan `EXTRA_PREFER_OFFLINE`; ini **tidak menjamin** pengenalan suara offline bila paket bahasa offline belum tersedia di perangkat. Text-to-Speech juga bergantung pada mesin suara perangkat.
+
+## Cara mengganti isi repo
+
+Unggah seluruh isi folder ini ke root repository GitHub `CaturSuara` dan **timpa** file lama. Workflow `.github/workflows/build-apk.yml` harus ikut. Jalankan Actions → Build CATUR SUARA V2 APK. Unduh artifact `CATUR_SUARA_V2_APK` lalu ekstrak `app-debug.apk`.
+
+## Batasan
+
+- APK belum dikompilasi/diuji di lingkungan pembuatan ini. Jika GitHub Actions gagal, gunakan log error untuk perbaikan.
+- Mendukung arm64-v8a (umumnya OPPO A5 Pro). Promosi pion otomatis menjadi ratu. Pemain selalu putih.
+- Sumber Stockfish berlisensi GPLv3; distribusi APK harus menyertakan akses ke kode sumber Stockfish dan perubahan terkait sesuai lisensi. Sumber resmi: https://github.com/official-stockfish/Stockfish
