@@ -10,6 +10,7 @@ import android.speech.RecognizerIntent
 import android.speech.tts.TextToSpeech
 import android.view.Gravity
 import android.widget.*
+import android.widget.GridLayout
 import com.github.bhlangonijr.chesslib.Board
 import com.github.bhlangonijr.chesslib.Square
 import com.github.bhlangonijr.chesslib.move.Move
@@ -32,7 +33,7 @@ class MainActivity : Activity(), TextToSpeech.OnInitListener {
         super.onCreate(savedInstanceState)
         tts = TextToSpeech(this, this)
         val root = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL; setPadding(12, 12, 12, 12); setBackgroundColor(Color.rgb(245,245,245)) }
-        status = TextView(this).apply { textSize = 20f; gravity = Gravity.CENTER; setTextColor(Color.BLACK }
+        status = TextView(this).apply { textSize = 20f; gravity = Gravity.CENTER; setTextColor(Color.BLACK) }
         root.addView(status, LinearLayout.LayoutParams(-1, 65))
         val grid = GridLayout(this).apply { rowCount = 8; columnCount = 8 }
         squares = Array(64) { index ->
