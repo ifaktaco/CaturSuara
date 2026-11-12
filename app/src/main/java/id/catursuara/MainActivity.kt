@@ -6,6 +6,7 @@ import android.content.Intent
 import android.content.pm.PackageManager
 import android.graphics.Color
 import android.os.Bundle
+import android.util.TypedValue
 import android.speech.RecognizerIntent
 import android.speech.tts.TextToSpeech
 import android.view.Gravity
@@ -35,17 +36,40 @@ class MainActivity : Activity(), TextToSpeech.OnInitListener {
         val root = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL; setPadding(12, 12, 12, 12); setBackgroundColor(Color.rgb(245,245,245)) }
         status = TextView(this).apply { textSize = 20f; gravity = Gravity.CENTER; setTextColor(Color.BLACK) }
         root.addView(status, LinearLayout.LayoutParams(-1, 65))
-        val grid = GridLayout(this).apply { rowCount = 8; columnCount = 8 }
+        // Size the board explicitly: GridLayout children must not have zero height.
+        val screenWidth = resources.displayMetrics.widthPixels
+        val horizontalPadding = (24 * resources.displayMetrics.density).toInt()
+        val boardSize = screenWidth - horizontalPadding
+        val cellSize = boardSize / 8
+        val grid = GridLayout(this).apply {
+            rowCount = 8
+            columnCount = 8
+            alignmentMode = GridLayout.ALIGN_BOUNDS
+            useDefaultMargins = false
+        }
         squares = Array(64) { index ->
             val rank = 8 - index / 8
             val file = index % 8
             Button(this).apply {
-                textSize = 29f; minHeight = 0; minimumHeight = 0; minWidth = 0; minimumWidth = 0; setPadding(0,0,0,0)
+                setTextSize(TypedValue.COMPLEX_UNIT_SP, 27f)
+                gravity = Gravity.CENTER
+                minHeight = 0; minimumHeight = 0
+                minWidth = 0; minimumWidth = 0
+                setPadding(0, 0, 0, 0)
+                includeFontPadding = false
                 setOnClickListener { choose(Square.valueOf("${files[file].uppercaseChar()}$rank")) }
-                grid.addView(this, GridLayout.LayoutParams(GridLayout.spec(index / 8), GridLayout.spec(file, 1f)).apply { width = 0; height = 0 })
+                grid.addView(this, GridLayout.LayoutParams(
+                    GridLayout.spec(index / 8), GridLayout.spec(file)
+                ).apply {
+                    width = cellSize
+                    height = cellSize
+                    setMargins(0, 0, 0, 0)
+                })
             }
         }
-        root.addView(grid, LinearLayout.LayoutParams(-1, 0, 1f))
+        root.addView(grid, LinearLayout.LayoutParams(boardSize, boardSize).apply {
+            gravity = Gravity.CENTER_HORIZONTAL
+        })
         val voice = Button(this).apply { text = "🎤 UCAPKAN LANGKAH"; setOnClickListener { listen() } }
         root.addView(voice)
         root.addView(Button(this).apply { text = "PERMAINAN BARU"; setOnClickListener { board = Board(); from = null; render(); speak("Permainan baru") } })
