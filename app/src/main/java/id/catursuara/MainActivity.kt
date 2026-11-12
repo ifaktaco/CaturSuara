@@ -218,7 +218,11 @@ class MainActivity : Activity(), TextToSpeech.OnInitListener {
         val fen = board.fen; val token = gameId; val strength = level
         guide.text = "Stockfish sedang menghitung langkah terbaik..."
         worker.execute {
-            val answer = try { stockfish(fen, strength) } catch (_: Exception) { null }
+            var engineError: String? = null
+            val answer = try { stockfish(fen, strength) } catch (e: Exception) {
+                engineError = "${e.javaClass.simpleName}: ${e.message ?: "tanpa keterangan"}"
+                null
+            }
             runOnUiThread {
                 if (token != gameId || isFinishing || isDestroyed) return@runOnUiThread
                 busy = false
@@ -227,7 +231,7 @@ class MainActivity : Activity(), TextToSpeech.OnInitListener {
                     (answer.length < 5 || promotionLetter(it) == answer.getOrNull(4)?.toString())
                 }
                 if (move == null) {
-                    guide.text = "Stockfish tidak memberi saran. Pastikan mesin offline terpasang."
+                    guide.text = "Stockfish gagal: ${engineError ?: "Mesin tidak mengirim langkah legal (periksa NNUE/UCI)."}"
                     render(); speak(guide.text.toString()); return@runOnUiThread
                 }
                 suggestion = move
@@ -251,24 +255,25 @@ class MainActivity : Activity(), TextToSpeech.OnInitListener {
     }
     private fun stockfish(fen: String, strength: Int): String? {
         val binary = File(applicationInfo.nativeLibraryDir, "libstockfish.so")
-        if (!binary.exists()) return null
+        if (!binary.exists()) throw IllegalStateException("libstockfish.so tidak ditemukan di ${applicationInfo.nativeLibraryDir}")
+        if (!binary.canExecute()) throw IllegalStateException("libstockfish.so ada, tetapi tidak dapat dieksekusi")
         val process = ProcessBuilder(binary.absolutePath).redirectErrorStream(true).start()
         try {
             val writer = process.outputStream.bufferedWriter()
             val reader = process.inputStream.bufferedReader()
             fun send(cmd: String) { writer.write(cmd); writer.newLine(); writer.flush() }
             send("uci")
-            while (true) { val line = reader.readLine() ?: return null; if (line == "uciok") break }
+            while (true) { val line = reader.readLine() ?: throw IllegalStateException("Stockfish berhenti sebelum uciok"); if (line == "uciok") break }
             send("setoption name Threads value 1")
             send("setoption name Hash value 16")
             send("setoption name UCI_LimitStrength value true")
             send("setoption name UCI_Elo value ${listOf(1320,1600,1900,2400)[strength-1]}")
             send("isready")
-            while (true) { val line = reader.readLine() ?: return null; if (line == "readyok") break }
+            while (true) { val line = reader.readLine() ?: throw IllegalStateException("Stockfish berhenti sebelum readyok"); if (line == "readyok") break }
             send("position fen $fen")
             send("go movetime ${listOf(350,650,1000,1500)[strength-1]}")
             while (true) {
-                val line = reader.readLine() ?: return null
+                val line = reader.readLine() ?: throw IllegalStateException("Stockfish berhenti sebelum bestmove")
                 if (line.startsWith("bestmove ")) return line.split(" ").getOrNull(1)?.lowercase()
             }
         } finally { process.destroy() }
